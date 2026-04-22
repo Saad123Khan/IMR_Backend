@@ -1,0 +1,3366 @@
+{
+  "info": {
+    "name": "Remit Now Backend API",
+    "description": "Comprehensive API test collection for Remit Now backend with all endpoints and scenarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "1"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Signup - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has access_token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "});",
+                  "",
+                  "pm.test('Save access token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('access_token', jsonData.access_token);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('email');",
+                  "    pm.expect(jsonData.user).to.have.property('roleId');",
+                  "    pm.expect(jsonData.user).to.have.property('role');",
+                  "});",
+                  "",
+                  "pm.test('Save user ID for later tests', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('user_id', jsonData.user.id);",
+                  "    pm.environment.set('organization_id', jsonData.user.organizationId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@remit.com\",\n  \"phone\": \"+1234567890\",\n  \"organizationName\": \"Remit Now Inc\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "Signup - Missing Email and Phone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"organizationName\": \"Test Org\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "Signup - Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message includes password validation', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    const message = Array.isArray(jsonData.message) ? jsonData.message.join(' ') : jsonData.message;",
+                  "    pm.expect(message.toLowerCase()).to.include('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@remit.com\",\n  \"organizationName\": \"Test Org\",\n  \"password\": \"weak\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "Login - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has access_token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "});",
+                  "",
+                  "pm.test('Save access token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('access_token', jsonData.access_token);",
+                  "});"
+                  ,"",
+                  "pm.test('Save user ID for later tests', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.user && jsonData.user.id) {",
+                  "      pm.environment.set('user_id', jsonData.user.id);",
+                  "      pm.environment.set('organization_id', jsonData.user.organizationId);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@remit.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@remit.com\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - User Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nonexistent@remit.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Setup Owner Permissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Role created with permissions', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.permissions).to.include('create_corridor');",
+                  "    pm.environment.set('owner_role_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": []
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Full Access\",\n  \"description\": \"Full access role for organization owner\",\n  \"permissions\": [\"create_corridor\", \"read_corridor\", \"update_corridor\", \"delete_corridor\", \"create_router\", \"read_router\", \"update_router\", \"delete_router\", \"create_bank_payer_mapping\", \"read_bank_payer_mapping\", \"update_bank_payer_mapping\", \"delete_bank_payer_mapping\", \"create_user\", \"read_user\", \"update_user\", \"delete_user\", \"create_role\", \"read_role\", \"update_role\", \"delete_role\", \"manage_organization\", \"view_reports\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/roles",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Assign Owner Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Owner role assigned', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.roleId).to.equal(pm.environment.get('owner_role_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"{{owner_role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('roleId');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile - Unauthorized (No Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Create Employee - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// First, create a manager role with full permissions",
+                  "const createRoleRequest = {",
+                  "    url: pm.environment.get('base_url') + '/auth/roles',",
+                  "    method: 'POST',",
+                  "    header: {",
+                  "        'Content-Type': 'application/json',",
+                  "        'Authorization': 'Bearer ' + pm.environment.get('access_token')",
+                  "    },",
+                  "    body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "            name: 'Employee Manager Role',",
+                  "            description: 'Manager role for employees with full permissions',",
+                  "            permissions: ['create_corridor', 'read_corridor', 'update_corridor', 'delete_corridor', 'create_router', 'read_router', 'update_router', 'delete_router', 'create_bank_payer_mapping', 'read_bank_payer_mapping', 'update_bank_payer_mapping', 'delete_bank_payer_mapping']",
+                  "        })",
+                  "    }",
+                  "};",
+                  "",
+                  "pm.sendRequest(createRoleRequest, function(err, response) {",
+                  "    if (!err && response.code === 201) {",
+                  "        const roleData = response.json();",
+                  "        pm.environment.set('default_role_id', roleData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has employee data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "});",
+                  "",
+                  "pm.test('Save employee ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('employee_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee User\",\n  \"email\": \"employee@remit.com\",\n  \"phone\": \"+9876543210\",\n  \"password\": \"EmployeePass123!\",\n  \"roleId\": \"{{default_role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Create Employee - Duplicate Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 409', function () {",
+                  "    const status = pm.response.code;",
+                  "    pm.expect([400, 409]).to.include(status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee User\",\n  \"email\": \"employee@remit.com\",\n  \"phone\": \"+1111111111\",\n  \"password\": \"EmployeePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Get Employees - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/employees",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee by ID - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has employee data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/employees/{{employee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "{{employee_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee by ID - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions invalid UUID format', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Invalid UUID format');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/employees/invalid-id-12345",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "invalid-id-12345"]
+            }
+          }
+        },
+        {
+          "name": "Update Employee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee Updated\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees/{{employee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "{{employee_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Employee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/employees/{{employee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "{{employee_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Get My Organization - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has organization data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/organizations/my-organization",
+              "host": ["{{base_url}}"],
+              "path": ["organizations", "my-organization"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Corridors",
+      "item": [
+        {
+          "name": "Get All Corridors - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors",
+              "host": ["{{base_url}}"],
+              "path": ["corridors"]
+            }
+          }
+        },
+        {
+          "name": "Get Corridors - Filter by Country",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All results are from USA', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(corridor) {",
+                  "        pm.expect(corridor.country).to.equal('USA');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors?country=USA",
+              "host": ["{{base_url}}"],
+              "path": ["corridors"],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "USA"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Corridors - Filter by MTO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All results are western_union', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(corridor) {",
+                  "        pm.expect(corridor.mto).to.equal('western_union');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors?mto=western_union",
+              "host": ["{{base_url}}"],
+              "path": ["corridors"],
+              "query": [
+                {
+                  "key": "mto",
+                  "value": "western_union"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Corridors - Filter by Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All results are active', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(corridor) {",
+                  "        pm.expect(corridor.status).to.equal('active');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors?status=active",
+              "host": ["{{base_url}}"],
+              "path": ["corridors"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Corridors - Multiple Filters",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Results match all filters', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(corridor) {",
+                  "        pm.expect(corridor.country).to.equal('USA');",
+                  "        pm.expect(corridor.currency).to.equal('USD');",
+                  "        pm.expect(corridor.status).to.equal('active');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors?country=USA&currency=USD&status=active",
+              "host": ["{{base_url}}"],
+              "path": ["corridors"],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "USA"
+                },
+                {
+                  "key": "currency",
+                  "value": "USD"
+                },
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Corridor by ID - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has corridor data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.id).to.equal(pm.environment.get('corridor_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Corridor by ID - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions invalid UUID format', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Invalid UUID format');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/invalid-corridor-id",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "invalid-corridor-id"]
+            }
+          }
+        },
+        {
+          "name": "Update Corridor - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Corridor status updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('inactive');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"inactive\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fixed Fees",
+      "item": [
+        {
+          "name": "Create Fixed Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has fixed fee data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('thresholdAmount');",
+                  "    pm.expect(jsonData).to.have.property('feeAmount');",
+                  "});",
+                  "",
+                  "pm.test('Save fixed fee ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('fixed_fee_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thresholdAmount\": 1000,\n  \"feeAmount\": 25,\n  \"isPercentage\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fixed-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fixed-fees"]
+            }
+          }
+        },
+        {
+          "name": "Create Fixed Fee - Negative Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thresholdAmount\": -1000,\n  \"feeAmount\": 25,\n  \"isPercentage\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fixed-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fixed-fees"]
+            }
+          }
+        },
+        {
+          "name": "Get Fixed Fees - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fixed-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fixed-fees"]
+            }
+          }
+        },
+        {
+          "name": "Delete Fixed Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fixed-fees/{{fixed_fee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fixed-fees", "{{fixed_fee_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fees Slabs",
+      "item": [
+        {
+          "name": "Create Fees Slab - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has fees slab data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('minAmount');",
+                  "    pm.expect(jsonData).to.have.property('maxAmount');",
+                  "    pm.expect(jsonData).to.have.property('feeAmount');",
+                  "});",
+                  "",
+                  "pm.test('Save fees slab ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('fees_slab_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minAmount\": 0,\n  \"maxAmount\": 1000,\n  \"feeAmount\": 5,\n  \"isPercentage\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fees-slabs",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fees-slabs"]
+            }
+          }
+        },
+        {
+          "name": "Create Fees Slab - Invalid Range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minAmount\": 1000,\n  \"maxAmount\": 100,\n  \"feeAmount\": 5,\n  \"isPercentage\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fees-slabs",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fees-slabs"]
+            }
+          }
+        },
+        {
+          "name": "Get Fees Slabs - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fees-slabs",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fees-slabs"]
+            }
+          }
+        },
+        {
+          "name": "Delete Fees Slab - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/fees-slabs/{{fees_slab_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "fees-slabs", "{{fees_slab_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bank Fees",
+      "item": [
+        {
+          "name": "Create Bank Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has bank fee data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('bankName');",
+                  "    pm.expect(jsonData).to.have.property('currency');",
+                  "});",
+                  "",
+                  "pm.test('Save bank fee ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('bank_fee_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Chase Bank\",\n  \"currency\": \"USD\",\n  \"bankFeeAmount\": 2.5,\n  \"isPercentage\": false,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/bank-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "bank-fees"]
+            }
+          }
+        },
+        {
+          "name": "Create Bank Fee - Invalid Currency",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Chase Bank\",\n  \"currency\": \"USDA\",\n  \"bankFeeAmount\": 2.5,\n  \"isPercentage\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/bank-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "bank-fees"]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Fees - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/bank-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "bank-fees"]
+            }
+          }
+        },
+        {
+          "name": "Delete Bank Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/bank-fees/{{bank_fee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "bank-fees", "{{bank_fee_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Timing Fees",
+      "item": [
+        {
+          "name": "Create Timing Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has timing fee data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('startTime');",
+                  "    pm.expect(jsonData).to.have.property('endTime');",
+                  "});",
+                  "",
+                  "pm.test('Save timing fee ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('timing_fee_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"09:00\",\n  \"endTime\": \"17:00\",\n  \"applicableDays\": [\"MONDAY\", \"TUESDAY\", \"WEDNESDAY\", \"THURSDAY\", \"FRIDAY\"],\n  \"feeAmount\": 5,\n  \"isPercentage\": false,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/timing-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "timing-fees"]
+            }
+          }
+        },
+        {
+          "name": "Create Timing Fee - Invalid Time Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"9:00 AM\",\n  \"endTime\": \"5:00 PM\",\n  \"applicableDays\": [\"MONDAY\"],\n  \"feeAmount\": 5,\n  \"isPercentage\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/timing-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "timing-fees"]
+            }
+          }
+        },
+        {
+          "name": "Get Timing Fees - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/timing-fees",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "timing-fees"]
+            }
+          }
+        },
+        {
+          "name": "Delete Timing Fee - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}/timing-fees/{{timing_fee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}", "timing-fees", "{{timing_fee_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bank Payer Mappings",
+      "item": [
+        {
+          "name": "Create Bank Payer Mapping - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has mapping data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('bankName');",
+                  "    pm.expect(jsonData).to.have.property('mto');",
+                  "    pm.expect(jsonData).to.have.property('payerId');",
+                  "    pm.expect(jsonData.bankName).to.equal('Bank of India');",
+                  "    pm.expect(jsonData.mto).to.equal('western_union');",
+                  "    pm.expect(jsonData.payerId).to.equal('4421');",
+                  "});",
+                  "",
+                  "pm.test('Save bank payer mapping ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('bank_payer_mapping_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Bank of India\",\n  \"mto\": \"western_union\",\n  \"payerId\": \"4421\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings"]
+            }
+          }
+        },
+        {
+          "name": "Create Bank Payer Mapping - MoneyGram",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('MoneyGram payer ID is MG3221', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.payerId).to.equal('MG3221');",
+                  "});",
+                  "",
+                  "pm.test('Save second mapping ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('bank_payer_mapping_id_2', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Bank of India\",\n  \"mto\": \"moneygram\",\n  \"payerId\": \"MG3221\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings"]
+            }
+          }
+        },
+        {
+          "name": "Create Bank Payer Mapping - Duplicate (Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions duplicate mapping', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('already exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Bank of India\",\n  \"mto\": \"western_union\",\n  \"payerId\": \"4421\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings"]
+            }
+          }
+        },
+        {
+          "name": "Create Bank Payer Mapping - Invalid MTO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Bank of India\",\n  \"mto\": \"invalid_mto\",\n  \"payerId\": \"4421\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings"]
+            }
+          }
+        },
+        {
+          "name": "Get All Bank Payer Mappings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(2);",
+                  "});",
+                  "",
+                  "pm.test('Mappings have required fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(mapping) {",
+                  "        pm.expect(mapping).to.have.property('id');",
+                  "        pm.expect(mapping).to.have.property('bankName');",
+                  "        pm.expect(mapping).to.have.property('mto');",
+                  "        pm.expect(mapping).to.have.property('payerId');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings"]
+            }
+          }
+        },
+        {
+          "name": "Search Bank Payer Mappings by Bank Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains Bank of India mappings', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "    pm.expect(jsonData[0].bankName).to.include('Bank');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/search/by-bank-name?bankName=Bank",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "search", "by-bank-name"],
+              "query": [
+                {
+                  "key": "bankName",
+                  "value": "Bank"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Payer Mapping by Exact Bank Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains Bank of India mappings only', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    jsonData.forEach(function(mapping) {",
+                  "        pm.expect(mapping.bankName).to.equal('Bank of India');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/by-bank?bankName=Bank of India",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "by-bank"],
+              "query": [
+                {
+                  "key": "bankName",
+                  "value": "Bank of India"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Payer Mapping by MTO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains only western_union mappings', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "    jsonData.forEach(function(mapping) {",
+                  "        pm.expect(mapping.mto).to.equal('western_union');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/by-mto?mto=western_union",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "by-mto"],
+              "query": [
+                {
+                  "key": "mto",
+                  "value": "western_union"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Payer Mapping by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has mapping details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.id).to.equal(pm.environment.get('bank_payer_mapping_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/{{bank_payer_mapping_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "{{bank_payer_mapping_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Payer Mapping by ID - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions invalid UUID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Invalid UUID');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/invalid-id-12345",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "invalid-id-12345"]
+            }
+          }
+        },
+        {
+          "name": "Update Bank Payer Mapping - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Payer ID updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.payerId).to.equal('4422');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerId\": \"4422\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/{{bank_payer_mapping_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "{{bank_payer_mapping_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Bank Payer Mapping - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bank-payer-mappings/{{bank_payer_mapping_id_2}}",
+              "host": ["{{base_url}}"],
+              "path": ["bank-payer-mappings", "{{bank_payer_mapping_id_2}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Get Public Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has public key', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('publicKey');",
+                  "    pm.expect(jsonData.publicKey).to.include('BEGIN PUBLIC KEY');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhooks/public-key",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "public-key"]
+            }
+          },
+          "description": "Get the server's public key for encrypting webhook payloads. This is a public endpoint and does not require authentication."
+        },
+        {
+          "name": "Create Corridor via Webhook (Encrypted)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate correlation ID",
+                  "const correlationId = 'demo-' + Date.now();",
+                  "pm.environment.set('correlation_id', correlationId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success and signature', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData).to.have.property('signature');",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    pm.expect(jsonData).to.have.property('correlationId');",
+                  "});",
+                  "",
+                  "pm.test('Response has corridorId on success', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success) {",
+                  "        pm.expect(jsonData).to.have.property('corridorId');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"encryptedPayload\": \"GENERATE_USING_npm_run_webhook:encrypt\",\n  \"organizationId\": \"{{organization_id}}\",\n  \"correlationId\": \"{{correlation_id}}\"\n}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSTEP-BY-STEP: Generate Encrypted Payload\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n1. Open terminal and run:\n   npm run webhook:encrypt -- \\\\\n     --url http://localhost:3000/api/v1 \\\\\n     --payload '{\"organizationId\":\"YOUR_ORG_ID\",\"mto\":\"WESTERN_UNION\",\"country\":\"US\",\"paymentChannel\":\"bank\",\"currency\":\"USD\",\"feeType\":\"fixed_fees\",\"marginType\":\"fixed_margin\"}'\n\n2. Copy the base64 encryptedPayload from output\n\n3. Paste it above in the \"encryptedPayload\" field\n\n4. Replace {{organization_id}} with your actual org UUID\n\n5. Send the request\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nQUICK REFERENCE: Encryption Methods\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe encryption is RSA-2048 OAEP with SHA-256.\nYou can generate encrypted payloads using:\n\n• Node.js: npm run webhook:encrypt\n• Python: from Crypto.Cipher import PKCS1_OAEP\n• Go: github.com/golang-jwt/jwt\n• Java: javax.crypto.Cipher\n\nSee WEBHOOK_SETUP.md for full examples in each language."
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/corridors/create",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "corridors", "create"]
+            }
+          },
+          "description": "Create corridor via encrypted webhook (RSA-2048 OAEP-SHA256). No JWT auth required.\n\nUse the npm script to encrypt your payload:\n  npm run webhook:encrypt -- --url http://localhost:3000/api/v1 --payload '{...}'\n\nOr use the WebhookClient directly in your code.\n\nSee WEBHOOK_SETUP.md for complete documentation."
+        },
+        {
+          "name": "Get Webhook Logs (Requires Auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of logs', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhooks/logs?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "description": "Get audit log of webhook calls for your organization. Requires JWT with VIEW_CORRIDOR permission."
+        },
+        {
+          "name": "Get Webhook Log by Correlation ID (Requires Auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhooks/logs/{{correlation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "logs", "{{correlation_id}}"]
+            }
+          },
+          "description": "Trace a specific webhook request by correlation ID. Requires JWT with VIEW_CORRIDOR permission."
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "item": [
+        {
+          "name": "Create Role - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Role created with correct name', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('Viewer');",
+                  "});",
+                  "",
+                  "pm.test('Role has permissions array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('permissions');",
+                  "    pm.expect(jsonData.permissions).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Save role ID for later tests', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('role_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Viewer\",\n  \"description\": \"Can view corridors and routers\",\n  \"permissions\": [\"read_corridor\", \"read_router\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/roles",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Create Role - Manager",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Manager role has update/delete permissions', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.permissions).to.include('create_corridor');",
+                  "    pm.expect(jsonData.permissions).to.include('update_corridor');",
+                  "    pm.expect(jsonData.permissions).to.include('delete_corridor');",
+                  "});",
+                  "",
+                  "pm.test('Save manager role ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('manager_role_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Manager\",\n  \"description\": \"Can manage corridors and routers\",\n  \"permissions\": [\"create_corridor\", \"read_corridor\", \"update_corridor\", \"delete_corridor\", \"create_router\", \"read_router\", \"update_router\", \"delete_router\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/roles",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Get All Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Roles have required fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData[0]).to.have.property('id');",
+                  "    pm.expect(jsonData[0]).to.have.property('name');",
+                  "    pm.expect(jsonData[0]).to.have.property('permissions');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/roles",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Update Role - Add Permissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Permissions updated successfully', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.permissions).to.include('create_corridor');",
+                  "    pm.expect(jsonData.permissions).to.include('read_corridor');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\"read_corridor\", \"create_corridor\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/roles/{{role_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles", "{{role_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Employee with Custom Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Employee created successfully', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.email).to.equal('viewer@remit.com');",
+                  "});",
+                  "",
+                  "pm.test('Employee has assigned role', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.roleId).to.equal(pm.environment.get('role_id'));",
+                  "});",
+                  "",
+                  "pm.test('Save employee ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('viewer_employee_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@remit.com\",\n  \"password\": \"ViewerPass123!\",\n  \"name\": \"Viewer User\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Create Employee - FAIL (Invalid roleId format)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions roleId validation', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    const message = Array.isArray(jsonData.message) ? jsonData.message.join(' ') : jsonData.message;",
+                  "    pm.expect(message.toLowerCase()).to.include('uuid');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid@remit.com\",\n  \"password\": \"ValidPass123!\",\n  \"name\": \"Invalid User\",\n  \"roleId\": \"not-a-uuid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Update Employee - Assign Different Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Employee role updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.roleId).to.equal(pm.environment.get('manager_role_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"{{manager_role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/employees/{{viewer_employee_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "employees", "{{viewer_employee_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Role should be deletable after viewer employee was reassigned",
+                  "pm.test('Status code is 204 (deleted) or 400 (still in use)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 400]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 400) {",
+                  "    pm.test('Error message indicates role is still in use', function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.message.toLowerCase()).to.include('user');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/roles/{{role_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "roles", "{{role_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routers",
+      "item": [
+        {
+          "name": "Create Router - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has router data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('country');",
+                  "    pm.expect(jsonData).to.have.property('bankName');",
+                  "    pm.expect(jsonData).to.have.property('currency');",
+                  "    pm.expect(jsonData.country).to.equal('PK');",
+                  "    pm.expect(jsonData.bankName).to.equal('Bank of India');",
+                  "    pm.expect(jsonData.currency).to.equal('PKR');",
+                  "});",
+                  "",
+                  "pm.test('Save router ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('router_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country\": \"PK\",\n  \"bankName\": \"Bank of India\",\n  \"currency\": \"PKR\",\n  \"payoutType\": \"bank\",\n  \"strategy\": \"mto\",\n  \"defaultRoute\": \"western_union\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routers",
+              "host": ["{{base_url}}"],
+              "path": ["routers"]
+            }
+          }
+        },
+        {
+          "name": "Create Router - Duplicate (Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Error message mentions duplicate', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('already exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country\": \"PK\",\n  \"bankName\": \"Bank of India\",\n  \"currency\": \"PKR\",\n  \"payoutType\": \"bank\",\n  \"strategy\": \"mto\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routers",
+              "host": ["{{base_url}}"],
+              "path": ["routers"]
+            }
+          }
+        },
+        {
+          "name": "Get All Routers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers",
+              "host": ["{{base_url}}"],
+              "path": ["routers"]
+            }
+          }
+        },
+        {
+          "name": "Get Router by Country",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All routers have country PK', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.forEach(function(router) {",
+                  "        pm.expect(router.country).to.equal('PK');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/by-country?country=PK",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "by-country"],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "PK"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Router by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Router ID matches', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.equal(pm.environment.get('router_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Lookup Router by Country, Bank, Currency",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Router details match query', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.country).to.equal('PK');",
+                  "    pm.expect(jsonData.bankName).to.equal('Bank of India');",
+                  "    pm.expect(jsonData.currency).to.equal('PKR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/lookup?country=PK&bankName=Bank of India&currency=PKR",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "lookup"],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "PK"
+                },
+                {
+                  "key": "bankName",
+                  "value": "Bank of India"
+                },
+                {
+                  "key": "currency",
+                  "value": "PKR"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Routing Rule - Amount Range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Routing rule created', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.ruleType).to.equal('amount_range');",
+                  "    pm.expect(jsonData.target).to.equal('western_union');",
+                  "});",
+                  "",
+                  "pm.test('Save routing rule ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('routing_rule_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rule\": {\n    \"ruleType\": \"amount_range\",\n    \"value\": \"0-50000\",\n    \"minAmount\": 0,\n    \"maxAmount\": 50000,\n    \"target\": \"western_union\",\n    \"priority\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}/rules",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}", "rules"]
+            }
+          }
+        },
+        {
+          "name": "Get Routing Rules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has routing rules', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}/rules",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}", "rules"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Routing by Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resolved route is western_union', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('route');",
+                  "    pm.expect(jsonData.route).to.equal('western_union');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/resolve?country=PK&bankName=Bank of India&currency=PKR&amount=25000",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "resolve"],
+              "query": [
+                {
+                  "key": "country",
+                  "value": "PK"
+                },
+                {
+                  "key": "bankName",
+                  "value": "Bank of India"
+                },
+                {
+                  "key": "currency",
+                  "value": "PKR"
+                },
+                {
+                  "key": "amount",
+                  "value": "25000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Router - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Default route updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.defaultRoute).to.equal('moneygram');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defaultRoute\": \"moneygram\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Routing Rule - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Rule target updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.target).to.equal('moneygram');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target\": \"moneygram\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}/rules/{{routing_rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}", "rules", "{{routing_rule_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Routing Rule - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/routers/{{router_id}}/rules/{{routing_rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["routers", "{{router_id}}", "rules", "{{routing_rule_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Corridor - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/corridors/{{corridor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["corridors", "{{corridor_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "organization_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "corridor_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employee_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fixed_fee_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fees_slab_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bank_fee_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "timing_fee_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bank_payer_mapping_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bank_payer_mapping_id_2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "router_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "routing_rule_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "role_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "manager_role_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "viewer_employee_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

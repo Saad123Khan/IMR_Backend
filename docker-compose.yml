@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: remit_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: remit_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - remit_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: remit_backend
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: remit_db
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      JWT_SECRET: dev-secret-key-not-for-production-use-only
+      JWT_EXPIRES_IN: 24h
+      DB_SYNCHRONIZE: "true"   # Development: auto-sync schema changes
+      DB_LOGGING: "true"       # Development: show SQL queries for debugging
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - remit_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  remit_network:
+    driver: bridge
