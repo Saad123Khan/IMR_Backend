@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(powershell -Command \"Get-Service -Name postgresql* 2>/dev/null | Select-Object Name, Status; Get-Command psql -ErrorAction SilentlyContinue | Select-Object Source\")",
+      "PowerShell($f = \"C:\\\\Users\\\\Supreme_Traders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--saad-imr-backend-backend\\\\124d6b4b-305d-48bc-8388-ce498c1606d2\\\\tasks\\\\by80l9aq2.output\"; $c = Get-Content $f -ErrorAction SilentlyContinue; Write-Output \"Lines: $\\($c.Count\\)\"; $c | Select-Object -Last 20)"
+    ]
+  }
+}

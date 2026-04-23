@@ -10,16 +10,19 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { Role } from './entities/role.entity';
 import { User } from '../users/entities/user.entity';
+import { PasswordReset } from './entities/password-reset.entity';
 import { RoleService } from './services/role.service';
 import { RoleController } from './controllers/role.controller';
+import { MailModule } from '../mail/mail.module';
 import type { StringValue } from 'ms';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Role, User]),
+    TypeOrmModule.forFeature([Role, User, PasswordReset]),
     UsersModule,
     PassportModule,
     OrganizationsModule,
+    MailModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

@@ -1,15 +1,15 @@
-import { 
-  Controller, 
-  Get, 
+import {
+  Controller,
+  Get,
   Post,
-  Patch, 
-  Body, 
-  Param, 
-  Delete, 
-  UseGuards, 
-  HttpCode, 
+  Patch,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  HttpCode,
   HttpStatus,
-  ConflictException
+  ConflictException,
 } from '@nestjs/common';
 import { ParseUUIDPipe } from '@src/common/pipes/parse-uuid.pipe';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
@@ -21,6 +21,7 @@ import { CurrentUser } from '@src/auth/decorators/current-user.decorator';
 import { UserRole, Permission } from '@src/common/enums';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 
 interface UserPayload {
@@ -43,6 +44,19 @@ export class UsersController {
   @ApiOkResponse({ description: 'User profile retrieved successfully' })
   getProfile(@CurrentUser() user: UserPayload) {
     return this.usersService.findById(user.userId);
+  }
+
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password for the currently logged-in user' })
+  @ApiOkResponse({ description: 'Password changed successfully' })
+  @ApiResponse({ status: 401, description: 'Current password is incorrect' })
+  async changePassword(
+    @CurrentUser() user: UserPayload,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    await this.usersService.changePassword(user.userId, changePasswordDto.currentPassword, changePasswordDto.newPassword);
+    return { message: 'Password changed successfully' };
   }
 
   @Post('employees')
