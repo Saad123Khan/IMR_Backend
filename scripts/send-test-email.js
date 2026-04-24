@@ -8,20 +8,29 @@ async function main() {
   const user = process.env.MAIL_USER;
   const pass = process.env.MAIL_PASS;
   const fromName = process.env.MAIL_FROM_NAME || 'IMR Support';
-  const fromAddress = process.env.MAIL_FROM_ADDRESS || user;
+  let fromAddress = process.env.MAIL_FROM_ADDRESS || user;
   const to = process.env.TEST_TO || user;
 
-  if (!host || !user || !pass || !fromAddress) {
-    console.error('Missing MAIL_* env vars. Please set MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS, MAIL_FROM_ADDRESS.');
-    process.exit(1);
+  let transporter;
+  if (host && user && pass && fromAddress) {
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    });
+  } else {
+    console.warn('MAIL_* env vars not fully configured — falling back to Ethereal test account');
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: testAccount.smtp.host,
+      port: testAccount.smtp.port,
+      secure: testAccount.smtp.secure,
+      auth: { user: testAccount.user, pass: testAccount.pass },
+    });
+    fromAddress = fromAddress || testAccount.user;
+    console.log('Ethereal account created:', testAccount.user);
   }
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  });
 
   const info = await transporter.sendMail({
     from: `"${fromName}" <${fromAddress}>`,
@@ -33,6 +42,8 @@ async function main() {
 
   console.log('Message sent:', info.messageId);
   console.log('Envelope:', info.envelope);
+  const preview = nodemailer.getTestMessageUrl(info);
+  if (preview) console.log('Preview URL:', preview);
   process.exit(0);
 }
 
