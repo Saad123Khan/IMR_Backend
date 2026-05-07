@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Or, Repository } from 'typeorm';
 import { Corridor } from './entities/corridor.entity';
 import { FixedFee } from './entities/fixed-fee.entity';
 import { FeesSlab } from './entities/fees-slab.entity';
@@ -54,7 +54,10 @@ export class CorridorsService {
 
   async findAll(organizationId: string): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
-      where: { organizationId },
+      where: [
+        { organizationId },
+        { organizationId: IsNull() },
+      ],
       order: { createdAt: 'DESC' },
     });
   }
@@ -105,29 +108,20 @@ export class CorridorsService {
       feeType?: string;
     },
   ): Promise<Corridor[]> {
-    const where: any = { organizationId };
+    const where: any = {};
 
-    if (filters.country) {
-      where.country = filters.country;
-    }
-    if (filters.mto) {
-      where.mto = filters.mto;
-    }
-    if (filters.status) {
-      where.status = filters.status;
-    }
-    if (filters.paymentChannel) {
-      where.paymentChannel = filters.paymentChannel;
-    }
-    if (filters.currency) {
-      where.currency = filters.currency;
-    }
-    if (filters.feeType) {
-      where.feeType = filters.feeType;
-    }
+    if (filters.country) where.country = filters.country;
+    if (filters.mto) where.mto = filters.mto;
+    if (filters.status) where.status = filters.status;
+    if (filters.paymentChannel) where.paymentChannel = filters.paymentChannel;
+    if (filters.currency) where.currency = filters.currency;
+    if (filters.feeType) where.feeType = filters.feeType;
 
     return await this.corridorsRepository.find({
-      where,
+      where: [
+        { ...where, organizationId },
+        { ...where, organizationId: IsNull() },
+      ],
       order: { createdAt: 'DESC' },
     });
   }

@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MtoCountry, Country } from '../entities/mto-country.entity';
@@ -178,20 +177,6 @@ export class CountriesService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async syncAllCountriesCronJob() {
-    this.logger.debug('Starting countries sync cron job...');
-    
-    // Get all MTO names from mock data
-    const mtoNames = Object.keys(this.mockCountriesData);
-
-    for (const mtoName of mtoNames) {
-      const result = await this.syncCountriesForMto(mtoName);
-      this.logger.debug(`Sync result for ${mtoName}:`, result);
-    }
-
-    this.logger.debug('Completed countries sync cron job');
-  }
 
   /**
    * Compare if countries data has changed

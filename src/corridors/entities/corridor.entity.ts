@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Organization } from '../../organizations/entities/organization.entity';
-import { MTOProvider, PaymentChannel, CorridorStatus, FeeType, MarginType } from '@src/common/enums';
+import { CorridorStatus, FeeType, MarginType } from '@src/common/enums';
 import { FeesSlab } from './fees-slab.entity';
 import { FixedFee } from './fixed-fee.entity';
 import { BankFeeConfig } from './bank-fee-config.entity';
@@ -16,20 +16,20 @@ export class Corridor {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({
-    type: 'enum',
-    enum: MTOProvider,
-  })
-  mto: MTOProvider;
+  @Column({ type: 'varchar', length: 100 })
+  mto: string;
 
   @Column()
   country: string;
 
-  @Column({
-    type: 'enum',
-    enum: PaymentChannel,
-  })
-  paymentChannel: PaymentChannel;
+  @Column({ nullable: true })
+  countryName: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  paymentChannel: string;
+
+  @Column({ nullable: true })
+  paymentChannelName: string;
 
   @Column()
   currency: string;
@@ -44,6 +44,7 @@ export class Corridor {
   @Column({
     type: 'enum',
     enum: FeeType,
+    default: FeeType.AS_PER_MTO,
     nullable: false,
   })
   feeType: FeeType;
@@ -51,15 +52,16 @@ export class Corridor {
   @Column({
     type: 'enum',
     enum: MarginType,
+    default: MarginType.AS_PER_MTO,
     nullable: false,
   })
   marginType: MarginType;
 
-  @ManyToOne(() => Organization, organization => organization.corridors, { nullable: false })
+  @ManyToOne(() => Organization, organization => organization.corridors, { nullable: true })
   @JoinColumn({ name: 'organizationId' })
   organization: Organization;
 
-  @Column()
+  @Column({ nullable: true })
   organizationId: string;
 
   @OneToMany(() => FeesSlab, feesSlab => feesSlab.corridor, { cascade: true })
