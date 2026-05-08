@@ -63,14 +63,28 @@ export class CorridorsService {
   }
 
   async findOne(id: string, organizationId: string): Promise<Corridor> {
-    const corridor = await this.corridorsRepository.findOne({
+    // First try org-specific corridor
+    let corridor = await this.corridorsRepository.findOne({
       where: { id, organizationId },
     });
-    
+
+    // If not found, check global (cron-created) corridors
     if (!corridor) {
-      throw new NotFoundException(`Corridor with ID ${id} not found in your organization`);
+      corridor = await this.corridorsRepository.findOne({
+        where: { id, organizationId: IsNull() },
+      });
+
+      // Claim this global corridor for the organization
+      if (corridor) {
+        corridor.organizationId = organizationId;
+        corridor = await this.corridorsRepository.save(corridor);
+      }
     }
-    
+
+    if (!corridor) {
+      throw new NotFoundException(`Corridor with ID ${id} not found`);
+    }
+
     return corridor;
   }
 
@@ -128,14 +142,18 @@ export class CorridorsService {
 
   // Fixed Fee Methods
   async createFixedFee(corridorId: string, createFixedFeeDto: CreateFixedFeeDto, organizationId: string): Promise<FixedFee> {
-    // Verify corridor exists and belongs to organization
-    await this.findOne(corridorId, organizationId);
-    
+    const corridor = await this.findOne(corridorId, organizationId);
+
     const fixedFee = this.fixedFeeRepository.create({
       ...createFixedFeeDto,
       corridorId,
     });
-    return await this.fixedFeeRepository.save(fixedFee);
+    const saved = await this.fixedFeeRepository.save(fixedFee);
+
+    if (corridor.feeType !== 'fixed_fees' as any) {
+      await this.corridorsRepository.update(corridorId, { feeType: 'fixed_fees' as any });
+    }
+    return saved;
   }
 
   async getFixedFees(corridorId: string, organizationId: string): Promise<FixedFee[]> {
@@ -165,14 +183,19 @@ export class CorridorsService {
 
   // Fees Slab Methods
   async createFeesSlab(corridorId: string, createFeesSlabDto: CreateFeesSlabDto, organizationId: string): Promise<FeesSlab> {
-    // Verify corridor exists and belongs to organization
-    await this.findOne(corridorId, organizationId);
-    
+    const corridor = await this.findOne(corridorId, organizationId);
+
     const feesSlab = this.feesSlabRepository.create({
       ...createFeesSlabDto,
       corridorId,
     });
-    return await this.feesSlabRepository.save(feesSlab);
+    const saved = await this.feesSlabRepository.save(feesSlab);
+
+    // Update corridor feeType so quote engine picks it up
+    if (corridor.feeType !== 'fees_slab' as any) {
+      await this.corridorsRepository.update(corridorId, { feeType: 'fees_slab' as any });
+    }
+    return saved;
   }
 
   async getFeeSlabs(corridorId: string, organizationId: string): Promise<FeesSlab[]> {
@@ -239,14 +262,18 @@ export class CorridorsService {
 
   // Timing Fee Methods
   async createTimingFee(corridorId: string, createTimingFeeDto: CreateTimingFeeDto, organizationId: string): Promise<TimingFee> {
-    // Verify corridor exists and belongs to organization
-    await this.findOne(corridorId, organizationId);
-    
+    const corridor = await this.findOne(corridorId, organizationId);
+
     const timingFee = this.timingFeeRepository.create({
       ...createTimingFeeDto,
       corridorId,
     });
-    return await this.timingFeeRepository.save(timingFee);
+    const saved = await this.timingFeeRepository.save(timingFee);
+
+    if (corridor.feeType !== 'timing' as any) {
+      await this.corridorsRepository.update(corridorId, { feeType: 'timing' as any });
+    }
+    return saved;
   }
 
   async getTimingFees(corridorId: string, organizationId: string): Promise<TimingFee[]> {
@@ -276,14 +303,18 @@ export class CorridorsService {
 
   // Fixed Margin Methods
   async createFixedMargin(corridorId: string, createFixedMarginDto: CreateFixedMarginDto, organizationId: string): Promise<FixedMargin> {
-    // Verify corridor exists and belongs to organization
-    await this.findOne(corridorId, organizationId);
-    
+    const corridor = await this.findOne(corridorId, organizationId);
+
     const fixedMargin = this.fixedMarginRepository.create({
       ...createFixedMarginDto,
       corridorId,
     });
-    return await this.fixedMarginRepository.save(fixedMargin);
+    const saved = await this.fixedMarginRepository.save(fixedMargin);
+
+    if (corridor.marginType !== 'fixed_margin' as any) {
+      await this.corridorsRepository.update(corridorId, { marginType: 'fixed_margin' as any });
+    }
+    return saved;
   }
 
   async getFixedMargins(corridorId: string, organizationId: string): Promise<FixedMargin[]> {
