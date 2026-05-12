@@ -85,12 +85,12 @@ export class CorridorsService {
 
     // When feeType changes, deactivate all old fee configs so new type takes over
     if (updateCorridorDto.feeType && updateCorridorDto.feeType !== corridor.feeType) {
-      await this.deactivateOtherFeeTypes(id);
+      await this.deactivateOtherFeeTypes(id, updateCorridorDto.feeType);
     }
 
     // When marginType changes, deactivate all old margin configs so new type takes over
     if (updateCorridorDto.marginType && updateCorridorDto.marginType !== corridor.marginType) {
-      await this.deactivateOtherMarginTypes(id);
+      await this.deactivateOtherMarginTypes(id, updateCorridorDto.marginType);
     }
 
     Object.assign(corridor, updateCorridorDto);
@@ -152,23 +152,31 @@ export class CorridorsService {
 
   // Fixed Fee Methods
   // Helper: Deactivate all other fee types when switching fee types
-  private async deactivateOtherFeeTypes(corridorId: string): Promise<void> {
-    await Promise.all([
+  private async deactivateOtherFeeTypes(corridorId: string, newFeeType?: string): Promise<void> {
+    const tasks: Promise<any>[] = [
       this.feesSlabRepository.update({ corridorId }, { isActive: false }),
       this.fixedFeeRepository.update({ corridorId }, { isActive: false }),
       this.timingFeeRepository.update({ corridorId }, { isActive: false }),
-      this.bankFeeConfigRepository.update({ corridorId }, { isActive: false }),
-    ]);
+    ];
+    // Only deactivate bank fee configs when switching AWAY from per_bank
+    if (newFeeType !== 'per_bank') {
+      tasks.push(this.bankFeeConfigRepository.update({ corridorId }, { isActive: false }));
+    }
+    await Promise.all(tasks);
   }
 
   // Helper: Deactivate all other margin types when switching margin types
-  private async deactivateOtherMarginTypes(corridorId: string): Promise<void> {
-    await Promise.all([
+  private async deactivateOtherMarginTypes(corridorId: string, newMarginType?: string): Promise<void> {
+    const tasks: Promise<any>[] = [
       this.marginSlabRepository.update({ corridorId }, { isActive: false }),
       this.fixedMarginRepository.update({ corridorId }, { isActive: false }),
       this.timingMarginRepository.update({ corridorId }, { isActive: false }),
-      this.bankMarginConfigRepository.update({ corridorId }, { isActive: false }),
-    ]);
+    ];
+    // Only deactivate bank margin configs when switching AWAY from per_bank_margin
+    if (newMarginType !== 'per_bank_margin') {
+      tasks.push(this.bankMarginConfigRepository.update({ corridorId }, { isActive: false }));
+    }
+    await Promise.all(tasks);
   }
 
   async createFixedFee(corridorId: string, createFixedFeeDto: CreateFixedFeeDto, organizationId: string): Promise<FixedFee> {
