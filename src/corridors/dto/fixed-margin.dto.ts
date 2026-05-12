@@ -3,8 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFixedMarginDto {
   @ApiProperty({
-    description: 'Threshold amount above which this margin applies',
-    example: 5000,
+    description: 'Threshold amount above which this margin applies (0 = always applies)',
+    example: 0,
     type: 'number',
   })
   @IsNumber()
@@ -14,7 +14,7 @@ export class CreateFixedMarginDto {
 
   @ApiProperty({
     description: 'Margin value (percentage by default)',
-    example: 0.5,
+    example: 2.5,
     type: 'number',
   })
   @IsNumber()
@@ -35,7 +35,7 @@ export class CreateFixedMarginDto {
 export class UpdateFixedMarginDto {
   @ApiProperty({
     description: 'Threshold amount above which this margin applies',
-    example: 5000,
+    example: 0,
     type: 'number',
     required: false,
   })
@@ -46,7 +46,7 @@ export class UpdateFixedMarginDto {
 
   @ApiProperty({
     description: 'Margin value (percentage by default)',
-    example: 0.5,
+    example: 2.5,
     type: 'number',
     required: false,
   })

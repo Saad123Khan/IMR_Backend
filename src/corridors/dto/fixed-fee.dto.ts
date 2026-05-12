@@ -3,8 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFixedFeeDto {
   @ApiProperty({
-    description: 'Threshold amount above which this fee applies',
-    example: 5000,
+    description: 'Threshold amount above which this fee applies (0 = always applies)',
+    example: 1000,
     type: 'number',
   })
   @IsNumber()
@@ -34,7 +34,7 @@ export class CreateFixedFeeDto {
 export class UpdateFixedFeeDto {
   @ApiProperty({
     description: 'Threshold amount above which this fee applies',
-    example: 5000,
+    example: 1000,
     type: 'number',
     required: false,
   })

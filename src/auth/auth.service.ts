@@ -9,13 +9,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { OrganizationsService } from '../organizations/organizations.service';
+import { Organization } from '../organizations/entities/organization.entity';
+import { Role } from './entities/role.entity';
+import { User } from '../users/entities/user.entity';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RoleService } from './services/role.service';
 import { PasswordReset } from './entities/password-reset.entity';
-import { User } from '../users/entities/user.entity';
 import { MailService } from '../mail/mail.service';
 import { Permission } from '@src/common/enums';
 import * as bcrypt from 'bcrypt';
@@ -58,34 +60,36 @@ export class AuthService {
       throw new ConflictException('Organization name already exists');
     }
 
-    const organization = await this.organizationsService.create(signupDto.organizationName);
     const hashedPassword = await bcrypt.hash(signupDto.password, 10);
 
-    const ownerRole = await this.roleService.create(
-      {
+    const { userId } = await this.dataSource.transaction(async (manager) => {
+      const org = manager.create(Organization, { name: signupDto.organizationName });
+      const savedOrg = await manager.save(Organization, org);
+
+      const role = manager.create(Role, {
         name: 'Organization Owner',
         description: 'Owner role with full permissions',
         permissions: Object.values(Permission),
-      },
-      organization.id,
-    );
+        organizationId: savedOrg.id,
+      });
+      const savedRole = await manager.save(Role, role);
 
-    const user = await this.usersService.create(
-      {
+      const user = manager.create(User, {
         email: signupDto.email,
         phone: signupDto.phone,
         password: hashedPassword,
         name: signupDto.name,
-        roleId: ownerRole.id,
-        organizationId: organization.id,
-      },
-      true,
-    );
+        roleId: savedRole.id,
+        organizationId: savedOrg.id,
+      });
+      const savedUser = await manager.save(User, user);
+      return { userId: savedUser.id };
+    });
 
-    const userWithRole = await this.usersService.findById(user.id);
+    const userWithRole = await this.usersService.findById(userId);
 
     return {
-      access_token: this.jwtService.sign({ sub: user.id }),
+      access_token: this.jwtService.sign({ sub: userId }),
       user: {
         id: userWithRole.id,
         email: userWithRole.email,

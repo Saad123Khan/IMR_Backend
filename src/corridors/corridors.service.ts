@@ -66,23 +66,12 @@ export class CorridorsService {
   }
 
   async findOne(id: string, organizationId: string): Promise<Corridor> {
-    // First try org-specific corridor
-    let corridor = await this.corridorsRepository.findOne({
-      where: { id, organizationId },
+    const corridor = await this.corridorsRepository.findOne({
+      where: [
+        { id, organizationId },
+        { id, organizationId: IsNull() },
+      ],
     });
-
-    // If not found, check global (cron-created) corridors
-    if (!corridor) {
-      corridor = await this.corridorsRepository.findOne({
-        where: { id, organizationId: IsNull() },
-      });
-
-      // Claim this global corridor for the organization
-      if (corridor) {
-        corridor.organizationId = organizationId;
-        corridor = await this.corridorsRepository.save(corridor);
-      }
-    }
 
     if (!corridor) {
       throw new NotFoundException(`Corridor with ID ${id} not found`);
