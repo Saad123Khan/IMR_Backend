@@ -52,13 +52,16 @@ export class CorridorsService {
     return await this.corridorsRepository.save(corridor);
   }
 
-  async findAll(organizationId: string): Promise<Corridor[]> {
+  async findAll(organizationId: string, limit: number = 50, offset: number = 0): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
       where: [
         { organizationId },
         { organizationId: IsNull() },
       ],
       order: { createdAt: 'DESC' },
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
+      take: limit,
+      skip: offset,
     });
   }
 
@@ -90,6 +93,17 @@ export class CorridorsService {
 
   async update(id: string, updateCorridorDto: UpdateCorridorDto, organizationId: string): Promise<Corridor> {
     const corridor = await this.findOne(id, organizationId);
+
+    // When feeType changes, deactivate all old fee configs so new type takes over
+    if (updateCorridorDto.feeType && updateCorridorDto.feeType !== corridor.feeType) {
+      await this.deactivateOtherFeeTypes(id);
+    }
+
+    // When marginType changes, deactivate all old margin configs so new type takes over
+    if (updateCorridorDto.marginType && updateCorridorDto.marginType !== corridor.marginType) {
+      await this.deactivateOtherMarginTypes(id);
+    }
+
     Object.assign(corridor, updateCorridorDto);
     return await this.corridorsRepository.save(corridor);
   }
@@ -102,12 +116,14 @@ export class CorridorsService {
   async findByCountry(country: string, organizationId: string): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
       where: { country, organizationId },
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
     });
   }
 
   async findByMTO(mto: string, organizationId: string): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
       where: { mto, organizationId } as any,
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
     });
   }
 
@@ -121,6 +137,8 @@ export class CorridorsService {
       currency?: string;
       feeType?: string;
     },
+    limit: number = 50,
+    offset: number = 0,
   ): Promise<Corridor[]> {
     const where: any = {};
 
@@ -137,16 +155,43 @@ export class CorridorsService {
         { ...where, organizationId: IsNull() },
       ],
       order: { createdAt: 'DESC' },
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
+      take: limit,
+      skip: offset,
     });
   }
 
   // Fixed Fee Methods
+  // Helper: Deactivate all other fee types when switching fee types
+  private async deactivateOtherFeeTypes(corridorId: string): Promise<void> {
+    await Promise.all([
+      this.feesSlabRepository.update({ corridorId }, { isActive: false }),
+      this.fixedFeeRepository.update({ corridorId }, { isActive: false }),
+      this.timingFeeRepository.update({ corridorId }, { isActive: false }),
+      this.bankFeeConfigRepository.update({ corridorId }, { isActive: false }),
+    ]);
+  }
+
+  // Helper: Deactivate all other margin types when switching margin types
+  private async deactivateOtherMarginTypes(corridorId: string): Promise<void> {
+    await Promise.all([
+      this.marginSlabRepository.update({ corridorId }, { isActive: false }),
+      this.fixedMarginRepository.update({ corridorId }, { isActive: false }),
+      this.timingMarginRepository.update({ corridorId }, { isActive: false }),
+      this.bankMarginConfigRepository.update({ corridorId }, { isActive: false }),
+    ]);
+  }
+
   async createFixedFee(corridorId: string, createFixedFeeDto: CreateFixedFeeDto, organizationId: string): Promise<FixedFee> {
     const corridor = await this.findOne(corridorId, organizationId);
+
+    // Deactivate all other fee types before creating new one
+    await this.deactivateOtherFeeTypes(corridorId);
 
     const fixedFee = this.fixedFeeRepository.create({
       ...createFixedFeeDto,
       corridorId,
+      isActive: true,
     });
     const saved = await this.fixedFeeRepository.save(fixedFee);
 
@@ -185,9 +230,13 @@ export class CorridorsService {
   async createFeesSlab(corridorId: string, createFeesSlabDto: CreateFeesSlabDto, organizationId: string): Promise<FeesSlab> {
     const corridor = await this.findOne(corridorId, organizationId);
 
+    // Deactivate all other fee types before creating new one
+    await this.deactivateOtherFeeTypes(corridorId);
+
     const feesSlab = this.feesSlabRepository.create({
       ...createFeesSlabDto,
       corridorId,
+      isActive: true,
     });
     const saved = await this.feesSlabRepository.save(feesSlab);
 
@@ -225,14 +274,32 @@ export class CorridorsService {
 
   // Bank Fee Config Methods
   async createBankFeeConfig(corridorId: string, createBankFeeConfigDto: CreateBankFeeConfigDto, organizationId: string): Promise<BankFeeConfig> {
-    // Verify corridor exists and belongs to organization
     await this.findOne(corridorId, organizationId);
     
-    const bankFeeConfig = this.bankFeeConfigRepository.create({
-      ...createBankFeeConfigDto,
-      corridorId,
+    // Deactivate all other fee types before creating new one
+    await this.deactivateOtherFeeTypes(corridorId);
+    
+    // Check if a bank fee config already exists for this bank and currency
+    const existingConfig = await this.bankFeeConfigRepository.findOne({
+      where: {
+        corridorId,
+        bankName: createBankFeeConfigDto.bankName,
+        currency: createBankFeeConfigDto.currency,
+      },
     });
-    return await this.bankFeeConfigRepository.save(bankFeeConfig);
+
+    let bankFeeConfig: BankFeeConfig;
+    if (existingConfig) {
+      // Update existing config and mark as active
+      bankFeeConfig = this.bankFeeConfigRepository.merge(existingConfig, { ...createBankFeeConfigDto, isActive: true });
+    } else {
+      // Create new config
+      bankFeeConfig = this.bankFeeConfigRepository.create({ ...createBankFeeConfigDto, corridorId, isActive: true });
+    }
+    
+    const saved = await this.bankFeeConfigRepository.save(bankFeeConfig);
+    await this.corridorsRepository.update(corridorId, { feeType: 'per_bank' as any });
+    return saved;
   }
 
   async getBankFeeConfigs(corridorId: string, organizationId: string): Promise<BankFeeConfig[]> {
@@ -264,9 +331,18 @@ export class CorridorsService {
   async createTimingFee(corridorId: string, createTimingFeeDto: CreateTimingFeeDto, organizationId: string): Promise<TimingFee> {
     const corridor = await this.findOne(corridorId, organizationId);
 
+    // Only deactivate OTHER fee types — do NOT deactivate existing timing_fees
+    // so multiple timing slots can all remain active at the same time.
+    await Promise.all([
+      this.feesSlabRepository.update({ corridorId }, { isActive: false }),
+      this.fixedFeeRepository.update({ corridorId }, { isActive: false }),
+      this.bankFeeConfigRepository.update({ corridorId }, { isActive: false }),
+    ]);
+
     const timingFee = this.timingFeeRepository.create({
       ...createTimingFeeDto,
       corridorId,
+      isActive: true,
     });
     const saved = await this.timingFeeRepository.save(timingFee);
 
@@ -305,9 +381,13 @@ export class CorridorsService {
   async createFixedMargin(corridorId: string, createFixedMarginDto: CreateFixedMarginDto, organizationId: string): Promise<FixedMargin> {
     const corridor = await this.findOne(corridorId, organizationId);
 
+    // Deactivate all other margin types before creating new one
+    await this.deactivateOtherMarginTypes(corridorId);
+
     const fixedMargin = this.fixedMarginRepository.create({
       ...createFixedMarginDto,
       corridorId,
+      isActive: true,
     });
     const saved = await this.fixedMarginRepository.save(fixedMargin);
 
@@ -346,12 +426,19 @@ export class CorridorsService {
   async createMarginSlab(corridorId: string, createMarginSlabDto: CreateMarginSlabDto, organizationId: string): Promise<MarginSlab> {
     // Verify corridor exists and belongs to organization
     await this.findOne(corridorId, organizationId);
-    
+    // Deactivate other margin types before creating new one
+    await this.deactivateOtherMarginTypes(corridorId);
+
     const marginSlab = this.marginSlabRepository.create({
       ...createMarginSlabDto,
       corridorId,
+      isActive: true,
     });
-    return await this.marginSlabRepository.save(marginSlab);
+    const saved = await this.marginSlabRepository.save(marginSlab);
+
+    // Update corridor marginType so core engine picks it up
+    await this.corridorsRepository.update(corridorId, { marginType: 'margin_slab' as any });
+    return saved;
   }
 
   async getMarginSlabs(corridorId: string, organizationId: string): Promise<MarginSlab[]> {
@@ -381,14 +468,31 @@ export class CorridorsService {
 
   // Bank Margin Config Methods
   async createBankMarginConfig(corridorId: string, createBankMarginConfigDto: CreateBankMarginConfigDto, organizationId: string): Promise<BankMarginConfig> {
-    // Verify corridor exists and belongs to organization
     await this.findOne(corridorId, organizationId);
-    
-    const bankMarginConfig = this.bankMarginConfigRepository.create({
-      ...createBankMarginConfigDto,
-      corridorId,
+    // Deactivate all other margin types before creating new one
+    await this.deactivateOtherMarginTypes(corridorId);
+
+    // Check if a bank margin config already exists for this bank and currency
+    const existingConfig = await this.bankMarginConfigRepository.findOne({
+      where: {
+        corridorId,
+        bankName: createBankMarginConfigDto.bankName,
+        currency: createBankMarginConfigDto.currency,
+      },
     });
-    return await this.bankMarginConfigRepository.save(bankMarginConfig);
+
+    let bankMarginConfig: BankMarginConfig;
+    if (existingConfig) {
+      // Update existing config and mark as active
+      bankMarginConfig = this.bankMarginConfigRepository.merge(existingConfig, { ...createBankMarginConfigDto, isActive: true });
+    } else {
+      // Create new config
+      bankMarginConfig = this.bankMarginConfigRepository.create({ ...createBankMarginConfigDto, corridorId, isActive: true });
+    }
+
+    const saved = await this.bankMarginConfigRepository.save(bankMarginConfig);
+    await this.corridorsRepository.update(corridorId, { marginType: 'per_bank_margin' as any });
+    return saved;
   }
 
   async getBankMarginConfigs(corridorId: string, organizationId: string): Promise<BankMarginConfig[]> {
@@ -420,12 +524,24 @@ export class CorridorsService {
   async createTimingMargin(corridorId: string, createTimingMarginDto: CreateTimingMarginDto, organizationId: string): Promise<TimingMargin> {
     // Verify corridor exists and belongs to organization
     await this.findOne(corridorId, organizationId);
-    
+
+    // Only deactivate OTHER margin types — do NOT deactivate existing timing_margins
+    // so multiple timing slots can all remain active at the same time.
+    await Promise.all([
+      this.marginSlabRepository.update({ corridorId }, { isActive: false }),
+      this.fixedMarginRepository.update({ corridorId }, { isActive: false }),
+      this.bankMarginConfigRepository.update({ corridorId }, { isActive: false }),
+    ]);
+
     const timingMargin = this.timingMarginRepository.create({
       ...createTimingMarginDto,
       corridorId,
+      isActive: true,
     });
-    return await this.timingMarginRepository.save(timingMargin);
+    const saved = await this.timingMarginRepository.save(timingMargin);
+
+    await this.corridorsRepository.update(corridorId, { marginType: 'timing_margin' as any });
+    return saved;
   }
 
   async getTimingMargins(corridorId: string, organizationId: string): Promise<TimingMargin[]> {

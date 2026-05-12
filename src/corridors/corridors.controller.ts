@@ -20,6 +20,10 @@ import { CreateFixedFeeDto } from './dto/fixed-fee.dto';
 import { CreateFeesSlabDto } from './dto/fees-slab.dto';
 import { CreateBankFeeConfigDto } from './dto/bank-fee-config.dto';
 import { CreateTimingFeeDto } from './dto/timing-fee.dto';
+import { CreateFixedMarginDto } from './dto/fixed-margin.dto';
+import { CreateMarginSlabDto } from './dto/margin-slab.dto';
+import { CreateTimingMarginDto } from './dto/timing-margin.dto';
+import { CreateBankMarginConfigDto } from './dto/bank-margin-config.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
@@ -42,13 +46,15 @@ export class CorridorsController {
   constructor(private readonly corridorsService: CorridorsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all corridors for the organization with optional filters' })
+  @ApiOperation({ summary: 'Get all corridors for the organization with optional filters and pagination' })
   @ApiQuery({ name: 'country', required: false, description: 'Filter by country' })
   @ApiQuery({ name: 'mto', required: false, description: 'Filter by MTO provider' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by corridor status (active, inactive, suspended, pending)' })
   @ApiQuery({ name: 'paymentChannel', required: false, description: 'Filter by payment channel (bank, wallet, cash_pickup)' })
   @ApiQuery({ name: 'currency', required: false, description: 'Filter by currency code' })
   @ApiQuery({ name: 'feeType', required: false, description: 'Filter by fee type (fixed_fees, fees_slab, timing, per_bank, as_per_mto)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of records per page (max 100, default 50)' })
+  @ApiQuery({ name: 'offset', required: false, description: 'Number of records to skip (default 0)' })
   @ApiResponse({ status: 200, description: 'List of corridors' })
   async findAll(
     @CurrentUser() user: UserPayload,
@@ -58,7 +64,12 @@ export class CorridorsController {
     @Query('paymentChannel') paymentChannel?: string,
     @Query('currency') currency?: string,
     @Query('feeType') feeType?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
   ) {
+    const limitNum = Math.min(parseInt(limit || '50'), 50000);
+    const offsetNum = parseInt(offset || '0');
+    
     return this.corridorsService.findByFilters(user.organizationId, {
       country,
       mto,
@@ -66,7 +77,7 @@ export class CorridorsController {
       paymentChannel,
       currency,
       feeType,
-    });
+    }, limitNum, offsetNum);
   }
 
   @Get(':id')
@@ -257,5 +268,129 @@ export class CorridorsController {
     @CurrentUser() user: UserPayload,
   ) {
     return this.corridorsService.deleteTimingFee(corridorId, feeId, user.organizationId);
+  }
+
+  // Fixed Margin Endpoints
+  @Post(':corridorId/fixed-margins')
+  @RequirePermission(Permission.CREATE_CORRIDOR)
+  @HttpCode(HttpStatus.CREATED)
+  async createFixedMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Body() dto: CreateFixedMarginDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.createFixedMargin(corridorId, dto, user.organizationId);
+  }
+
+  @Get(':corridorId/fixed-margins')
+  async getFixedMargins(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.getFixedMargins(corridorId, user.organizationId);
+  }
+
+  @Delete(':corridorId/fixed-margins/:marginId')
+  @RequirePermission(Permission.DELETE_CORRIDOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteFixedMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('marginId', ParseUUIDPipe) marginId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.deleteFixedMargin(corridorId, marginId, user.organizationId);
+  }
+
+  // Margin Slab Endpoints
+  @Post(':corridorId/margin-slabs')
+  @RequirePermission(Permission.CREATE_CORRIDOR)
+  @HttpCode(HttpStatus.CREATED)
+  async createMarginSlab(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Body() dto: CreateMarginSlabDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.createMarginSlab(corridorId, dto, user.organizationId);
+  }
+
+  @Get(':corridorId/margin-slabs')
+  async getMarginSlabs(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.getMarginSlabs(corridorId, user.organizationId);
+  }
+
+  @Delete(':corridorId/margin-slabs/:slabId')
+  @RequirePermission(Permission.DELETE_CORRIDOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMarginSlab(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('slabId', ParseUUIDPipe) slabId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.deleteMarginSlab(corridorId, slabId, user.organizationId);
+  }
+
+  // Timing Margin Endpoints
+  @Post(':corridorId/timing-margins')
+  @RequirePermission(Permission.CREATE_CORRIDOR)
+  @HttpCode(HttpStatus.CREATED)
+  async createTimingMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Body() dto: CreateTimingMarginDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.createTimingMargin(corridorId, dto, user.organizationId);
+  }
+
+  @Get(':corridorId/timing-margins')
+  async getTimingMargins(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.getTimingMargins(corridorId, user.organizationId);
+  }
+
+  @Delete(':corridorId/timing-margins/:marginId')
+  @RequirePermission(Permission.DELETE_CORRIDOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteTimingMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('marginId', ParseUUIDPipe) marginId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.deleteTimingMargin(corridorId, marginId, user.organizationId);
+  }
+
+  // Bank Margin Config Endpoints
+  @Post(':corridorId/bank-margins')
+  @RequirePermission(Permission.CREATE_CORRIDOR)
+  @HttpCode(HttpStatus.CREATED)
+  async createBankMarginConfig(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Body() dto: CreateBankMarginConfigDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.createBankMarginConfig(corridorId, dto, user.organizationId);
+  }
+
+  @Get(':corridorId/bank-margins')
+  async getBankMarginConfigs(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.getBankMarginConfigs(corridorId, user.organizationId);
+  }
+
+  @Delete(':corridorId/bank-margins/:configId')
+  @RequirePermission(Permission.DELETE_CORRIDOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBankMarginConfig(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('configId', ParseUUIDPipe) configId: string,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.deleteBankMarginConfig(corridorId, configId, user.organizationId);
   }
 }

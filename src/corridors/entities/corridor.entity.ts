@@ -14,32 +14,32 @@ import { BankMarginConfig } from './bank-margin-config.entity';
 @Entity('corridors')
 export class Corridor {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  mto: string;
+  mto!: string;
 
   @Column()
-  country: string;
+  country!: string;
 
   @Column({ nullable: true })
-  countryName: string;
+  countryName?: string;
 
   @Column({ type: 'varchar', length: 100 })
-  paymentChannel: string;
+  paymentChannel!: string;
 
   @Column({ nullable: true })
-  paymentChannelName: string;
+  paymentChannelName?: string;
 
   @Column()
-  currency: string;
+  currency!: string;
 
   @Column({
     type: 'enum',
     enum: CorridorStatus,
     default: CorridorStatus.ACTIVE,
   })
-  status: CorridorStatus;
+  status!: CorridorStatus;
 
   @Column({
     type: 'enum',
@@ -47,7 +47,7 @@ export class Corridor {
     default: FeeType.AS_PER_MTO,
     nullable: false,
   })
-  feeType: FeeType;
+  feeType!: FeeType;
 
   @Column({
     type: 'enum',
@@ -55,42 +55,42 @@ export class Corridor {
     default: MarginType.AS_PER_MTO,
     nullable: false,
   })
-  marginType: MarginType;
+  marginType!: MarginType;
 
   @ManyToOne(() => Organization, organization => organization.corridors, { nullable: true })
   @JoinColumn({ name: 'organizationId' })
-  organization: Organization;
+  organization?: Organization;
 
   @Column({ nullable: true })
-  organizationId: string;
+  organizationId?: string;
 
-  @OneToMany(() => FeesSlab, feesSlab => feesSlab.corridor, { cascade: true })
-  feesSlabs: FeesSlab[];
+  @OneToMany(() => FeesSlab, feesSlab => feesSlab.corridor, { cascade: true, lazy: true })
+  feesSlabs!: Promise<FeesSlab[]>;
 
-  @OneToMany(() => FixedFee, fixedFee => fixedFee.corridor, { cascade: true })
-  fixedFees: FixedFee[];
+  @OneToMany(() => FixedFee, fixedFee => fixedFee.corridor, { cascade: true, lazy: true })
+  fixedFees!: Promise<FixedFee[]>;
 
-  @OneToMany(() => BankFeeConfig, bankFeeConfig => bankFeeConfig.corridor, { cascade: true })
-  bankFeeConfigs: BankFeeConfig[];
+  @OneToMany(() => BankFeeConfig, bankFeeConfig => bankFeeConfig.corridor, { cascade: true, lazy: true })
+  bankFeeConfigs!: Promise<BankFeeConfig[]>;
 
-  @OneToMany(() => TimingFee, timingFee => timingFee.corridor, { cascade: true })
-  timingFees: TimingFee[];
+  @OneToMany(() => TimingFee, timingFee => timingFee.corridor, { cascade: true, lazy: true })
+  timingFees!: Promise<TimingFee[]>;
 
-  @OneToMany(() => FixedMargin, fixedMargin => fixedMargin.corridor, { cascade: true })
-  fixedMargins: FixedMargin[];
+  @OneToMany(() => FixedMargin, fixedMargin => fixedMargin.corridor, { cascade: true, lazy: true })
+  fixedMargins!: Promise<FixedMargin[]>;
 
-  @OneToMany(() => MarginSlab, marginSlab => marginSlab.corridor, { cascade: true })
-  marginSlabs: MarginSlab[];
+  @OneToMany(() => MarginSlab, marginSlab => marginSlab.corridor, { cascade: true, lazy: true })
+  marginSlabs!: Promise<MarginSlab[]>;
 
-  @OneToMany(() => TimingMargin, timingMargin => timingMargin.corridor, { cascade: true })
-  timingMargins: TimingMargin[];
+  @OneToMany(() => TimingMargin, timingMargin => timingMargin.corridor, { cascade: true, lazy: true })
+  timingMargins!: Promise<TimingMargin[]>;
 
-  @OneToMany(() => BankMarginConfig, bankMarginConfig => bankMarginConfig.corridor, { cascade: true })
-  bankMarginConfigs: BankMarginConfig[];
+  @OneToMany(() => BankMarginConfig, bankMarginConfig => bankMarginConfig.corridor, { cascade: true, lazy: true })
+  bankMarginConfigs!: Promise<BankMarginConfig[]>;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

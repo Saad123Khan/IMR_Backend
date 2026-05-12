@@ -25,6 +25,9 @@ export class MarginSlab {
   @Column({ default: true })
   isPercentage: boolean;
 
+  @Column({ default: true })
+  isActive: boolean; // Whether this config is active
+
   @CreateDateColumn()
   createdAt: Date;
 

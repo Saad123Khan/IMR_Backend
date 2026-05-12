@@ -27,7 +27,7 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.DATABASE_PORT || '5432'),
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
-  database: process.env.DATABASE_NAME || 'remit_db',
+  database: process.env.DATABASE_NAME || 'remit_db2',
   synchronize: false, // Always use migrations for schema changes
   logging: process.env.DB_LOGGING === 'true',
   entities: [

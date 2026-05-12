@@ -25,6 +25,9 @@ export class FeesSlab {
   @Column({ default: false })
   isPercentage: boolean; // true if feeAmount is percentage, false if fixed
 
+  @Column({ default: true })
+  isActive: boolean; // Whether this config is active
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -22,6 +22,9 @@ export class FixedFee {
   @Column({ default: false })
   isPercentage: boolean; // true if feeAmount is percentage
 
+  @Column({ default: true })
+  isActive: boolean; // Whether this config is active
+
   @CreateDateColumn()
   createdAt: Date;
 

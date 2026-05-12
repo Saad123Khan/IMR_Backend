@@ -7,6 +7,7 @@ import { OrganizationsModule } from '@src/organizations/organizations.module';
 import { CorridorsModule } from '@src/corridors/corridors.module';
 import { WebhooksModule } from '@src/webhooks/webhooks.module';
 import { CountriesModule } from '@src/countries/countries.module';
+import { BanksModule } from '@src/banks/banks.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -55,6 +56,7 @@ import { HealthController } from './health.controller';
     CorridorsModule,
     WebhooksModule,
     CountriesModule,
+    BanksModule,
   ],
   controllers: [HealthController],
 })
