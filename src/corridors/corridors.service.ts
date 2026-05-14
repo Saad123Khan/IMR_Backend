@@ -59,7 +59,7 @@ export class CorridorsService {
         { organizationId: IsNull() },
       ],
       order: { createdAt: 'DESC' },
-      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'defaultTimingFeeValue', 'defaultTimingMarginValue', 'organizationId', 'createdAt', 'updatedAt'],
       take: limit,
       skip: offset,
     });
@@ -105,7 +105,7 @@ export class CorridorsService {
   async findByCountry(country: string, organizationId: string): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
       where: { country, organizationId },
-      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
+      select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'defaultTimingFeeValue', 'defaultTimingMarginValue', 'organizationId', 'createdAt', 'updatedAt'],
     });
   }
 
@@ -150,32 +150,57 @@ export class CorridorsService {
     });
   }
 
-  // Fixed Fee Methods
-  // Helper: Deactivate all other fee types when switching fee types
+  // Helper: Deactivate other fee types when switching strategy
   private async deactivateOtherFeeTypes(corridorId: string, newFeeType?: string): Promise<void> {
-    const tasks: Promise<any>[] = [
-      this.feesSlabRepository.update({ corridorId }, { isActive: false }),
-      this.fixedFeeRepository.update({ corridorId }, { isActive: false }),
-      this.timingFeeRepository.update({ corridorId }, { isActive: false }),
-    ];
-    // Only deactivate bank fee configs when switching AWAY from per_bank
+    const tasks: Promise<any>[] = [];
+
+    // If we're NOT adding a slab, deactivate existing slabs
+    if (newFeeType !== 'fees_slab') {
+      tasks.push(this.feesSlabRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a fixed fee, deactivate existing fixed fees
+    if (newFeeType !== 'fixed_fees') {
+      tasks.push(this.fixedFeeRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a timing fee, deactivate existing timing fees
+    if (newFeeType !== 'timing') {
+      tasks.push(this.timingFeeRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a per-bank fee, deactivate existing per-bank configs
     if (newFeeType !== 'per_bank') {
       tasks.push(this.bankFeeConfigRepository.update({ corridorId }, { isActive: false }));
     }
+
     await Promise.all(tasks);
   }
 
-  // Helper: Deactivate all other margin types when switching margin types
+  // Helper: Deactivate other margin types when switching strategy
   private async deactivateOtherMarginTypes(corridorId: string, newMarginType?: string): Promise<void> {
-    const tasks: Promise<any>[] = [
-      this.marginSlabRepository.update({ corridorId }, { isActive: false }),
-      this.fixedMarginRepository.update({ corridorId }, { isActive: false }),
-      this.timingMarginRepository.update({ corridorId }, { isActive: false }),
-    ];
-    // Only deactivate bank margin configs when switching AWAY from per_bank_margin
+    const tasks: Promise<any>[] = [];
+
+    // If we're NOT adding a slab, deactivate existing slabs
+    if (newMarginType !== 'margin_slab') {
+      tasks.push(this.marginSlabRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a fixed margin, deactivate existing fixed margins
+    if (newMarginType !== 'fixed_margin') {
+      tasks.push(this.fixedMarginRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a timing margin, deactivate existing timing margins
+    if (newMarginType !== 'timing_margin') {
+      tasks.push(this.timingMarginRepository.update({ corridorId }, { isActive: false }));
+    }
+
+    // If we're NOT adding a per-bank margin, deactivate existing per-bank configs
     if (newMarginType !== 'per_bank_margin') {
       tasks.push(this.bankMarginConfigRepository.update({ corridorId }, { isActive: false }));
     }
+
     await Promise.all(tasks);
   }
 
@@ -183,7 +208,7 @@ export class CorridorsService {
     const corridor = await this.findOne(corridorId, organizationId);
 
     // Deactivate all other fee types before creating new one
-    await this.deactivateOtherFeeTypes(corridorId);
+    await this.deactivateOtherFeeTypes(corridorId, 'fixed_fees');
 
     const fixedFee = this.fixedFeeRepository.create({
       ...createFixedFeeDto,
@@ -223,12 +248,20 @@ export class CorridorsService {
     await this.fixedFeeRepository.remove(fixedFee);
   }
 
+  async updateFixedFee(corridorId: string, feeId: string, dto: Partial<CreateFixedFeeDto>, organizationId: string): Promise<FixedFee> {
+    await this.findOne(corridorId, organizationId);
+    const fixedFee = await this.fixedFeeRepository.findOne({ where: { id: feeId, corridorId } });
+    if (!fixedFee) throw new NotFoundException('Fixed fee not found');
+    Object.assign(fixedFee, dto);
+    return await this.fixedFeeRepository.save(fixedFee);
+  }
+
   // Fees Slab Methods
   async createFeesSlab(corridorId: string, createFeesSlabDto: CreateFeesSlabDto, organizationId: string): Promise<FeesSlab> {
     const corridor = await this.findOne(corridorId, organizationId);
 
-    // Deactivate all other fee types before creating new one
-    await this.deactivateOtherFeeTypes(corridorId);
+    // Only deactivate DIFFERENT fee types — slabs stay active together
+    await this.deactivateOtherFeeTypes(corridorId, 'fees_slab');
 
     const feesSlab = this.feesSlabRepository.create({
       ...createFeesSlabDto,
@@ -269,12 +302,21 @@ export class CorridorsService {
     await this.feesSlabRepository.remove(feesSlab);
   }
 
+  async updateFeesSlab(corridorId: string, slabId: string, dto: Partial<CreateFeesSlabDto>, organizationId: string): Promise<FeesSlab> {
+    await this.findOne(corridorId, organizationId);
+    const slab = await this.feesSlabRepository.findOne({ where: { id: slabId, corridorId } });
+    if (!slab) throw new NotFoundException('Fees slab not found');
+    Object.assign(slab, dto);
+    return await this.feesSlabRepository.save(slab);
+  }
+
   // Bank Fee Config Methods
   async createBankFeeConfig(corridorId: string, createBankFeeConfigDto: CreateBankFeeConfigDto, organizationId: string): Promise<BankFeeConfig> {
     await this.findOne(corridorId, organizationId);
     
     // Deactivate all other fee types before creating new one
-    await this.deactivateOtherFeeTypes(corridorId);
+    // Pass 'per_bank' to ensure we don't deactivate existing bank configs
+    await this.deactivateOtherFeeTypes(corridorId, 'per_bank');
     
     // Check if a bank fee config already exists for this bank and currency
     const existingConfig = await this.bankFeeConfigRepository.findOne({
@@ -374,12 +416,20 @@ export class CorridorsService {
     await this.timingFeeRepository.remove(timingFee);
   }
 
+  async updateTimingFee(corridorId: string, feeId: string, dto: Partial<CreateTimingFeeDto>, organizationId: string): Promise<TimingFee> {
+    await this.findOne(corridorId, organizationId);
+    const fee = await this.timingFeeRepository.findOne({ where: { id: feeId, corridorId } });
+    if (!fee) throw new NotFoundException('Timing fee not found');
+    Object.assign(fee, dto);
+    return await this.timingFeeRepository.save(fee);
+  }
+
   // Fixed Margin Methods
   async createFixedMargin(corridorId: string, createFixedMarginDto: CreateFixedMarginDto, organizationId: string): Promise<FixedMargin> {
     const corridor = await this.findOne(corridorId, organizationId);
 
     // Deactivate all other margin types before creating new one
-    await this.deactivateOtherMarginTypes(corridorId);
+    await this.deactivateOtherMarginTypes(corridorId, 'fixed_margin');
 
     const fixedMargin = this.fixedMarginRepository.create({
       ...createFixedMarginDto,
@@ -417,6 +467,14 @@ export class CorridorsService {
     }
     
     await this.fixedMarginRepository.remove(fixedMargin);
+  }
+
+  async updateFixedMargin(corridorId: string, marginId: string, dto: Partial<CreateFixedMarginDto>, organizationId: string): Promise<FixedMargin> {
+    await this.findOne(corridorId, organizationId);
+    const margin = await this.fixedMarginRepository.findOne({ where: { id: marginId, corridorId } });
+    if (!margin) throw new NotFoundException('Fixed margin not found');
+    Object.assign(margin, dto);
+    return await this.fixedMarginRepository.save(margin);
   }
 
   // Margin Slab Methods
@@ -463,11 +521,20 @@ export class CorridorsService {
     await this.marginSlabRepository.remove(marginSlab);
   }
 
+  async updateMarginSlab(corridorId: string, slabId: string, dto: Partial<CreateMarginSlabDto>, organizationId: string): Promise<MarginSlab> {
+    await this.findOne(corridorId, organizationId);
+    const slab = await this.marginSlabRepository.findOne({ where: { id: slabId, corridorId } });
+    if (!slab) throw new NotFoundException('Margin slab not found');
+    Object.assign(slab, dto);
+    return await this.marginSlabRepository.save(slab);
+  }
+
   // Bank Margin Config Methods
   async createBankMarginConfig(corridorId: string, createBankMarginConfigDto: CreateBankMarginConfigDto, organizationId: string): Promise<BankMarginConfig> {
     await this.findOne(corridorId, organizationId);
     // Deactivate all other margin types before creating new one
-    await this.deactivateOtherMarginTypes(corridorId);
+    // Pass 'per_bank_margin' to ensure we don't deactivate existing bank configs
+    await this.deactivateOtherMarginTypes(corridorId, 'per_bank_margin');
 
     // Check if a bank margin config already exists for this bank and currency
     const existingConfig = await this.bankMarginConfigRepository.findOne({
@@ -564,5 +631,13 @@ export class CorridorsService {
     }
     
     await this.timingMarginRepository.remove(timingMargin);
+  }
+
+  async updateTimingMargin(corridorId: string, marginId: string, dto: Partial<CreateTimingMarginDto>, organizationId: string): Promise<TimingMargin> {
+    await this.findOne(corridorId, organizationId);
+    const margin = await this.timingMarginRepository.findOne({ where: { id: marginId, corridorId } });
+    if (!margin) throw new NotFoundException('Timing margin not found');
+    Object.assign(margin, dto);
+    return await this.timingMarginRepository.save(margin);
   }
 }

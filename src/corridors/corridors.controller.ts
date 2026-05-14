@@ -139,6 +139,19 @@ export class CorridorsController {
     return this.corridorsService.getFixedFees(corridorId, user.organizationId);
   }
 
+  @Patch(':corridorId/fixed-fees/:feeId')
+  @ApiOperation({ summary: 'Update a fixed fee' })
+  @ApiResponse({ status: 200, description: 'Fixed fee successfully updated' })
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateFixedFee(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('feeId', ParseUUIDPipe) feeId: string,
+    @Body() dto: Partial<CreateFixedFeeDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateFixedFee(corridorId, feeId, dto, user.organizationId);
+  }
+
   @Delete(':corridorId/fixed-fees/:feeId')
   @ApiOperation({ summary: 'Delete a fixed fee' })
   @ApiResponse({ status: 204, description: 'Fixed fee successfully deleted' })
@@ -176,6 +189,19 @@ export class CorridorsController {
     @CurrentUser() user: UserPayload,
   ) {
     return this.corridorsService.getFeeSlabs(corridorId, user.organizationId);
+  }
+
+  @Patch(':corridorId/fees-slabs/:slabId')
+  @ApiOperation({ summary: 'Update a fees slab' })
+  @ApiResponse({ status: 200, description: 'Fees slab successfully updated' })
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateFeesSlab(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('slabId', ParseUUIDPipe) slabId: string,
+    @Body() dto: Partial<CreateFeesSlabDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateFeesSlab(corridorId, slabId, dto, user.organizationId);
   }
 
   @Delete(':corridorId/fees-slabs/:slabId')
@@ -256,6 +282,19 @@ export class CorridorsController {
     return this.corridorsService.getTimingFees(corridorId, user.organizationId);
   }
 
+  @Patch(':corridorId/timing-fees/:feeId')
+  @ApiOperation({ summary: 'Update a timing fee' })
+  @ApiResponse({ status: 200, description: 'Timing fee successfully updated' })
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateTimingFee(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('feeId', ParseUUIDPipe) feeId: string,
+    @Body() dto: Partial<CreateTimingFeeDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateTimingFee(corridorId, feeId, dto, user.organizationId);
+  }
+
   @Delete(':corridorId/timing-fees/:feeId')
   @ApiOperation({ summary: 'Delete a timing fee' })
   @ApiResponse({ status: 204, description: 'Timing fee successfully deleted' })
@@ -290,6 +329,17 @@ export class CorridorsController {
     return this.corridorsService.getFixedMargins(corridorId, user.organizationId);
   }
 
+  @Patch(':corridorId/fixed-margins/:marginId')
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateFixedMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('marginId', ParseUUIDPipe) marginId: string,
+    @Body() dto: Partial<CreateFixedMarginDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateFixedMargin(corridorId, marginId, dto, user.organizationId);
+  }
+
   @Delete(':corridorId/fixed-margins/:marginId')
   @RequirePermission(Permission.DELETE_CORRIDOR)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -321,6 +371,17 @@ export class CorridorsController {
     return this.corridorsService.getMarginSlabs(corridorId, user.organizationId);
   }
 
+  @Patch(':corridorId/margin-slabs/:slabId')
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateMarginSlab(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('slabId', ParseUUIDPipe) slabId: string,
+    @Body() dto: Partial<CreateMarginSlabDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateMarginSlab(corridorId, slabId, dto, user.organizationId);
+  }
+
   @Delete(':corridorId/margin-slabs/:slabId')
   @RequirePermission(Permission.DELETE_CORRIDOR)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -350,6 +411,17 @@ export class CorridorsController {
     @CurrentUser() user: UserPayload,
   ) {
     return this.corridorsService.getTimingMargins(corridorId, user.organizationId);
+  }
+
+  @Patch(':corridorId/timing-margins/:marginId')
+  @RequirePermission(Permission.UPDATE_CORRIDOR)
+  async updateTimingMargin(
+    @Param('corridorId', ParseUUIDPipe) corridorId: string,
+    @Param('marginId', ParseUUIDPipe) marginId: string,
+    @Body() dto: Partial<CreateTimingMarginDto>,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.corridorsService.updateTimingMargin(corridorId, marginId, dto, user.organizationId);
   }
 
   @Delete(':corridorId/timing-margins/:marginId')

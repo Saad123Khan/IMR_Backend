@@ -57,6 +57,12 @@ export class Corridor {
   })
   marginType!: MarginType;
 
+  @Column({ type: 'decimal', precision: 10, scale: 4, default: 0.0 })
+  defaultTimingFeeValue!: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 4, default: 0.0 })
+  defaultTimingMarginValue!: number;
+
   @ManyToOne(() => Organization, organization => organization.corridors, { nullable: true })
   @JoinColumn({ name: 'organizationId' })
   organization?: Organization;

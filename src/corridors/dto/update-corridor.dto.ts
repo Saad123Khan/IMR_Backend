@@ -69,4 +69,12 @@ export class UpdateCorridorDto {
   @IsEnum(MarginType)
   @IsOptional()
   marginType?: MarginType;
+
+  @ApiProperty({ description: 'Default Fee for Timing', required: false })
+  @IsOptional()
+  defaultTimingFeeValue?: number;
+
+  @ApiProperty({ description: 'Default Margin for Timing', required: false })
+  @IsOptional()
+  defaultTimingMarginValue?: number;
 }
