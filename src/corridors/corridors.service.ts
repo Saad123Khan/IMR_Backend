@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Or, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Corridor } from './entities/corridor.entity';
 import { FixedFee } from './entities/fixed-fee.entity';
 import { FeesSlab } from './entities/fees-slab.entity';
@@ -54,11 +54,8 @@ export class CorridorsService {
 
   async findAll(organizationId: string, limit: number = 50, offset: number = 0): Promise<Corridor[]> {
     return await this.corridorsRepository.find({
-      where: [
-        { organizationId },
-        { organizationId: IsNull() },
-      ],
-      order: { createdAt: 'DESC' },
+      where: { organizationId },
+      order: { mto: 'ASC', country: 'ASC', paymentChannel: 'ASC', currency: 'ASC' },
       select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'defaultTimingFeeValue', 'defaultTimingMarginValue', 'organizationId', 'createdAt', 'updatedAt'],
       take: limit,
       skip: offset,
@@ -67,10 +64,7 @@ export class CorridorsService {
 
   async findOne(id: string, organizationId: string): Promise<Corridor> {
     const corridor = await this.corridorsRepository.findOne({
-      where: [
-        { id, organizationId },
-        { id, organizationId: IsNull() },
-      ],
+      where: { id, organizationId },
     });
 
     if (!corridor) {
@@ -83,14 +77,36 @@ export class CorridorsService {
   async update(id: string, updateCorridorDto: UpdateCorridorDto, organizationId: string): Promise<Corridor> {
     const corridor = await this.findOne(id, organizationId);
 
-    // When feeType changes, deactivate all old fee configs so new type takes over
+    // When feeType changes, deactivate all old fee configs then re-activate the new type's records
     if (updateCorridorDto.feeType && updateCorridorDto.feeType !== corridor.feeType) {
       await this.deactivateOtherFeeTypes(id, updateCorridorDto.feeType);
+
+      // Re-activate existing records for the new type (handles switching back)
+      if (updateCorridorDto.feeType === 'fees_slab') {
+        await this.feesSlabRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.feeType === 'fixed_fees') {
+        await this.fixedFeeRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.feeType === 'timing') {
+        await this.timingFeeRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.feeType === 'per_bank') {
+        await this.bankFeeConfigRepository.update({ corridorId: id }, { isActive: true });
+      }
     }
 
-    // When marginType changes, deactivate all old margin configs so new type takes over
+    // When marginType changes, deactivate all old margin configs then re-activate the new type's records
     if (updateCorridorDto.marginType && updateCorridorDto.marginType !== corridor.marginType) {
       await this.deactivateOtherMarginTypes(id, updateCorridorDto.marginType);
+
+      // Re-activate existing records for the new type (handles switching back)
+      if (updateCorridorDto.marginType === 'margin_slab') {
+        await this.marginSlabRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.marginType === 'fixed_margin') {
+        await this.fixedMarginRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.marginType === 'timing_margin') {
+        await this.timingMarginRepository.update({ corridorId: id }, { isActive: true });
+      } else if (updateCorridorDto.marginType === 'per_bank_margin') {
+        await this.bankMarginConfigRepository.update({ corridorId: id }, { isActive: true });
+      }
     }
 
     Object.assign(corridor, updateCorridorDto);
@@ -139,11 +155,8 @@ export class CorridorsService {
     if (filters.feeType) where.feeType = filters.feeType;
 
     return await this.corridorsRepository.find({
-      where: [
-        { ...where, organizationId },
-        { ...where, organizationId: IsNull() },
-      ],
-      order: { createdAt: 'DESC' },
+      where: { ...where, organizationId },
+      order: { mto: 'ASC', country: 'ASC', paymentChannel: 'ASC', currency: 'ASC' },
       select: ['id', 'mto', 'country', 'countryName', 'paymentChannel', 'paymentChannelName', 'currency', 'status', 'feeType', 'marginType', 'organizationId', 'createdAt', 'updatedAt'],
       take: limit,
       skip: offset,
@@ -207,8 +220,9 @@ export class CorridorsService {
   async createFixedFee(corridorId: string, createFixedFeeDto: CreateFixedFeeDto, organizationId: string): Promise<FixedFee> {
     const corridor = await this.findOne(corridorId, organizationId);
 
-    // Deactivate all other fee types before creating new one
+    // Deactivate other fee types; re-activate any previously deactivated fixed fees
     await this.deactivateOtherFeeTypes(corridorId, 'fixed_fees');
+    await this.fixedFeeRepository.update({ corridorId }, { isActive: true });
 
     const fixedFee = this.fixedFeeRepository.create({
       ...createFixedFeeDto,
@@ -249,19 +263,29 @@ export class CorridorsService {
   }
 
   async updateFixedFee(corridorId: string, feeId: string, dto: Partial<CreateFixedFeeDto>, organizationId: string): Promise<FixedFee> {
-    await this.findOne(corridorId, organizationId);
+    const corridor = await this.findOne(corridorId, organizationId);
     const fixedFee = await this.fixedFeeRepository.findOne({ where: { id: feeId, corridorId } });
     if (!fixedFee) throw new NotFoundException('Fixed fee not found');
-    Object.assign(fixedFee, dto);
-    return await this.fixedFeeRepository.save(fixedFee);
+
+    // Deactivate other fee types — only fixed_fee stays active
+    await this.deactivateOtherFeeTypes(corridorId, 'fixed_fees');
+    Object.assign(fixedFee, { ...dto, isActive: true });
+    const saved = await this.fixedFeeRepository.save(fixedFee);
+
+    if (corridor.feeType !== 'fixed_fees' as any) {
+      await this.corridorsRepository.update(corridorId, { feeType: 'fixed_fees' as any });
+    }
+    return saved;
   }
 
   // Fees Slab Methods
   async createFeesSlab(corridorId: string, createFeesSlabDto: CreateFeesSlabDto, organizationId: string): Promise<FeesSlab> {
     const corridor = await this.findOne(corridorId, organizationId);
 
-    // Only deactivate DIFFERENT fee types — slabs stay active together
+    // Deactivate other fee types, then re-activate any previously deactivated slabs
+    // (handles case where type was switched away then back to fees_slab)
     await this.deactivateOtherFeeTypes(corridorId, 'fees_slab');
+    await this.feesSlabRepository.update({ corridorId }, { isActive: true });
 
     const feesSlab = this.feesSlabRepository.create({
       ...createFeesSlabDto,
@@ -306,6 +330,9 @@ export class CorridorsService {
     await this.findOne(corridorId, organizationId);
     const slab = await this.feesSlabRepository.findOne({ where: { id: slabId, corridorId } });
     if (!slab) throw new NotFoundException('Fees slab not found');
+    // Re-activate all slabs for this corridor — switching back to fees_slab type
+    await this.feesSlabRepository.update({ corridorId }, { isActive: true });
+    await this.corridorsRepository.update(corridorId, { feeType: 'fees_slab' as any });
     Object.assign(slab, dto);
     return await this.feesSlabRepository.save(slab);
   }
@@ -428,8 +455,9 @@ export class CorridorsService {
   async createFixedMargin(corridorId: string, createFixedMarginDto: CreateFixedMarginDto, organizationId: string): Promise<FixedMargin> {
     const corridor = await this.findOne(corridorId, organizationId);
 
-    // Deactivate all other margin types before creating new one
+    // Deactivate other margin types; re-activate any previously deactivated fixed margins
     await this.deactivateOtherMarginTypes(corridorId, 'fixed_margin');
+    await this.fixedMarginRepository.update({ corridorId }, { isActive: true });
 
     const fixedMargin = this.fixedMarginRepository.create({
       ...createFixedMarginDto,
@@ -470,19 +498,29 @@ export class CorridorsService {
   }
 
   async updateFixedMargin(corridorId: string, marginId: string, dto: Partial<CreateFixedMarginDto>, organizationId: string): Promise<FixedMargin> {
-    await this.findOne(corridorId, organizationId);
+    const corridor = await this.findOne(corridorId, organizationId);
     const margin = await this.fixedMarginRepository.findOne({ where: { id: marginId, corridorId } });
     if (!margin) throw new NotFoundException('Fixed margin not found');
-    Object.assign(margin, dto);
-    return await this.fixedMarginRepository.save(margin);
+
+    // Deactivate other margin types — only fixed_margin stays active
+    await this.deactivateOtherMarginTypes(corridorId, 'fixed_margin');
+    Object.assign(margin, { ...dto, isActive: true });
+    const saved = await this.fixedMarginRepository.save(margin);
+
+    if (corridor.marginType !== 'fixed_margin' as any) {
+      await this.corridorsRepository.update(corridorId, { marginType: 'fixed_margin' as any });
+    }
+    return saved;
   }
 
   // Margin Slab Methods
   async createMarginSlab(corridorId: string, createMarginSlabDto: CreateMarginSlabDto, organizationId: string): Promise<MarginSlab> {
     // Verify corridor exists and belongs to organization
     await this.findOne(corridorId, organizationId);
-    // Deactivate other margin types before creating new one
-    await this.deactivateOtherMarginTypes(corridorId);
+    // Deactivate other margin types, then re-activate any previously deactivated slabs
+    // (handles case where type was switched away then back to margin_slab)
+    await this.deactivateOtherMarginTypes(corridorId, 'margin_slab');
+    await this.marginSlabRepository.update({ corridorId }, { isActive: true });
 
     const marginSlab = this.marginSlabRepository.create({
       ...createMarginSlabDto,
@@ -525,6 +563,9 @@ export class CorridorsService {
     await this.findOne(corridorId, organizationId);
     const slab = await this.marginSlabRepository.findOne({ where: { id: slabId, corridorId } });
     if (!slab) throw new NotFoundException('Margin slab not found');
+    // Re-activate all slabs for this corridor — switching back to margin_slab type
+    await this.marginSlabRepository.update({ corridorId }, { isActive: true });
+    await this.corridorsRepository.update(corridorId, { marginType: 'margin_slab' as any });
     Object.assign(slab, dto);
     return await this.marginSlabRepository.save(slab);
   }
